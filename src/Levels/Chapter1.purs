@@ -4,9 +4,9 @@ import Prelude
 import Data.List (List(..), reverse, snoc, filter, (:), elemIndex)
 import Data.Maybe (Maybe(..), isJust)
 
-import Helper
-import Transformer
-import Types
+import Helper (fromArray, (:->), (:>))
+import Transformer (clearEmpty, mapReject, replaceMultiple)
+import Types (Chapter, Cube(..), Difficulty(..))
 
 contains :: forall a. (Eq a) => a -> List a -> Boolean
 contains x xs = isJust $ elemIndex x xs
@@ -38,7 +38,7 @@ chapter1 = {
         },
         "stackR" :> {
             name: "map (stack {Red})",
-            function: map (`snoc` Red)
+            function: map (_ `snoc` Red)
         },
         "mapReverse" :> {
             name: "map reverse",
@@ -58,7 +58,7 @@ chapter1 = {
         },
         "1.2" :-> {
             name: "Venus",
-            help: Just """The function `filterContainsR` removes colums without a red cube.""",
+            help: Just """The function `filterContainsR` removes columns without a red cube.""",
             difficulty: Medium,
             initial: [[Red, Red], [Red, Yellow], [Cyan, Yellow], [Cyan, Cyan]],
             target: [[Red, Red], [Red, Red]]

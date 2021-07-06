@@ -1,15 +1,16 @@
 module Storage where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Data.List (toList, fromList)
+import Control.Monad.Eff (kind Effect, Eff)
+import Data.Array as A
+import Data.List (fromFoldable)
 import Data.Maybe (Maybe(..))
 
 import Data.StrMap as SM
 
-import Types
+import Types (GameState, TransformerId, LevelId)
 
-foreign import data STORAGE :: !
+foreign import data STORAGE :: Effect
 
 type SaveableGameState = {
     currentLevel :: LevelId,
@@ -19,13 +20,13 @@ type SaveableGameState = {
 toSaveable :: GameState -> SaveableGameState
 toSaveable gs = {
         currentLevel: gs.currentLevel,
-        levelState: fromList <$> gs.levelState
+        levelState: A.fromFoldable <$> gs.levelState
     }
 
 fromSaveable :: SaveableGameState -> GameState
 fromSaveable sgs = {
         currentLevel: sgs.currentLevel,
-        levelState: toList <$> sgs.levelState
+        levelState: fromFoldable <$> sgs.levelState
     }
 
 

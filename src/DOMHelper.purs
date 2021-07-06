@@ -13,11 +13,11 @@ import DOM.Node.NonElementParentNode (getElementById)
 import DOM.Node.ParentNode (children)
 import DOM.Node.Types (HTMLCollection(), Element(), Document(), ElementId(..),
                        documentToNonElementParentNode, elementToParentNode)
-import Data.Either.Unsafe (fromRight)
+import Data.Either (fromRight)
 import Data.Foreign (toForeign)
-import Data.Maybe (Maybe(), maybe)
-import Data.Maybe.Unsafe (fromJust)
-import Data.Nullable (toMaybe)
+import Data.Maybe (Maybe(), maybe, fromJust)
+import Partial.Unsafe (unsafePartial)
+import Control.Monad.Except (runExcept)
 
 getDocument :: forall eff. Eff (dom :: DOM | eff) Document
 getDocument = window >>= document <#> htmlDocumentToDocument
@@ -27,15 +27,14 @@ getElementById' :: forall eff. String
                 -> Eff (dom :: DOM | eff) (Maybe Element)
 getElementById' id doc = do
   let docNode = documentToNonElementParentNode doc
-  nullableEl <- getElementById (ElementId id) docNode
-  return $ toMaybe nullableEl
+  getElementById (ElementId id) docNode
 
 -- | Perform a DOM action with a single element which can be accessed by ID
 withElementById :: forall eff. String
                 -> Document
                 -> (Element -> Eff (dom :: DOM | eff) Unit)
                 -> Eff (dom :: DOM | eff) Unit
-withElementById id doc action = getElementById' id doc >>= maybe (return unit) action
+withElementById id doc action = getElementById' id doc >>= maybe (pure unit) action
 
 children' :: forall eff. Element -> Eff (dom :: DOM | eff) (Array HTMLElement)
 children' el = htmlCollectionToArray <$> children (elementToParentNode el)
@@ -45,13 +44,13 @@ addEventListener' etype listener target =
   addEventListener etype (eventListener listener) true target
 
 unsafeElementToHTMLElement :: Element -> HTMLElement
-unsafeElementToHTMLElement = fromRight <<< readHTMLElement <<< toForeign
+unsafeElementToHTMLElement = unsafePartial (fromRight <<< runExcept <<< readHTMLElement <<< toForeign)
 
 unsafeEventToKeyboardEvent :: Event -> KeyboardEvent
-unsafeEventToKeyboardEvent = fromRight <<< readKeyboardEvent <<< toForeign
+unsafeEventToKeyboardEvent = unsafePartial (fromRight <<< runExcept <<< readKeyboardEvent <<< toForeign)
 
 unsafeGetAttribute :: forall eff. String -> Element -> Eff (dom :: DOM | eff) String
-unsafeGetAttribute key el = (fromJust <<< toMaybe) <$> getAttribute key el
+unsafeGetAttribute key el = unsafePartial fromJust <$> getAttribute key el
 
 foreign import getSelectedValue :: forall eff. Element
                                 -> Eff (dom :: DOM | eff) String
